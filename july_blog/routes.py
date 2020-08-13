@@ -13,10 +13,8 @@ from flask_login import login_required, login_user, current_user, logout_user
 # Home route
 @app.route('/')
 def home():
-    customer_name = "Brian"
-    order_number = 1
-    item_dict = {1:"Ice Cream", 2:"Bread", 3:"Lemons", 4:"Cereal"}
-    return render_template("home.html", customer_name=customer_name, order_number=order_number, item_dict = item_dict)
+    posts = Post.query.all()
+    return render_template("home.html", posts=posts)
 
 # Register route
 @app.route('/register', methods=['GET','POST'])
@@ -51,8 +49,43 @@ def createposts():
     if request.method == 'POST' and form.validate():
         title = form.title.data
         content = form.content.data
+        user_id = current_user.id
         print("\n", title, content)
+        post = Post(title, content, user_id)
+
+        db.session.add(post)
+        db.session.commit()
+        return redirect(url_for('createposts'))
     return render_template('createposts.html', form=form)
+
+@app.route('/posts/<int:post_id>')
+@login_required
+def post_detail(post_id):
+    post = Post.query.get_or_404(post_id)
+    return render_template('post_detail.html', post=post)
+
+
+@app.route('/posts/update/<int:post_id>', methods=['GET', 'POST'])
+@login_required
+def post_update(post_id):
+    post = Post.query.get_or_404(post_id)
+    update_form = BlogPostForm()
+
+    if request.method == 'POST' and update_form.validate():
+        title = update_form.title.data
+        content = update_form.content.data
+        user_id = current_user.id
+        # Update post with form info
+        post.title = title
+        post.content = content
+        post.user_id = user_id
+
+        # Commit change to db
+        db.session.commit()
+        return redirect(url_for('post_update', post_id=post.id))
+
+    return render_template('post_update.html', update_form=update_form)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
