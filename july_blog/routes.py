@@ -87,6 +87,15 @@ def post_update(post_id):
     return render_template('post_update.html', update_form=update_form)
 
 
+@app.route('/posts/delete/<int:post_id>', methods=['POST'])
+@login_required
+def post_delete(post_id):
+    post = Post.query.get_or_404(post_id)
+    db.session.delete(post)
+    db.session.commit()
+    return redirect(url_for('home'))
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
